@@ -58,7 +58,7 @@ static void voxelGridFilter(float voxel_size,
 
         pcl::VoxelGrid<PointT> voxelFilter;
         voxelFilter.setLeafSize(voxel_size, voxel_size, voxel_size);
-        voxelFilter.setMinimumPointsNumberPerVoxel(min_point_number_per_voxel);
+        //voxelFilter.setMinimumPointsNumberPerVoxel(min_point_number_per_voxel);
         voxelFilter.setInputCloud(cloud_in);
         voxelFilter.filter(*cloud);
     }
@@ -76,7 +76,7 @@ static void approxVoxelGridFilter(float voxel_size,
 
         pcl::ApproximateVoxelGrid<PointT> voxelFilter;
         voxelFilter.setLeafSize(voxel_size, voxel_size, voxel_size);
-        voxelFilter.setMinimumPointsNumberPerVoxel(min_point_number_per_voxel);
+        //voxelFilter.setMinimumPointsNumberPerVoxel(min_point_number_per_voxel);
         voxelFilter.setInputCloud(cloud_in);
         voxelFilter.filter(*cloud);
     }
