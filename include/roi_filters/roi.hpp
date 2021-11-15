@@ -160,10 +160,79 @@ static void squareROIFilter(float radius_min,
 }
 
 template <typename PointT>
+static void doublesquareROIFilter(float radius_min,
+                            float radius_max,
+                            float radius_max_rear,
+                            float car_front,
+                            float car_rear,
+                            float car_side,
+                            float z_limit_min,
+                            float z_limit_max,
+                            typename pcl::PointCloud<PointT>::Ptr cloud) {
+    if (cloud->size()) {
+        typename pcl::PointCloud<PointT>::Ptr cloud_in(new pcl::PointCloud<PointT>);
+        *cloud_in = *cloud;
+        cloud->clear();
+
+        const float forward_out = radius_max;
+        const float back_out = -radius_max_rear;
+        const float left_out = -radius_min;
+        const float right_out = radius_min;
+
+        for (size_t pt = 0u; pt < cloud_in->size(); ++pt) 
+        {
+            const PointT& point = cloud_in->points[pt];
+            // Step 1: filter out a large part
+            if (point.y > left_out && point.y < right_out) 
+            {
+                // Step 2: filter out small part
+                if (point.z > z_limit_min && point.z < z_limit_max) 
+                {
+                    // Step 3: almost not filter out
+                    if (point.x > back_out && point.x < forward_out) 
+                    {
+                        cloud->points.push_back(point);
+                    }
+                }
+            }
+        }
+
+        *cloud_in = *cloud;
+        cloud->points.clear();
+
+        const float forward_in = car_front;
+        const float back_in = -car_rear;
+        const float left_in = -car_side;
+        const float right_in = car_side;
+
+        for (size_t pt = 0u; pt < cloud_in->size(); ++pt) 
+        {
+            const PointT& point = cloud_in->points[pt];
+            if (point.y > left_in && point.y < right_in) 
+            {
+                if (point.x > back_in && point.x < forward_in)
+                {
+                    continue;
+                }
+            }
+            
+            cloud->points.push_back(point);
+        }
+
+    }
+}
+
+template <typename PointT>
 static void applyROIFilter(const ROIParams& params,
                            typename pcl::PointCloud<PointT>::Ptr cloud) {
     const float roi_radius_min = params.roi_radius_min_m;
     const float roi_radius_max = params.roi_radius_max_m;
+    const float roi_radius_max_rear = params.roi_radius_max_rear_m;
+
+    const float roi_car_front = params.roi_car_front_m;
+    const float roi_car_rear = params.roi_car_rear_m;
+    const float roi_car_side = params.roi_car_side_m;
+
     const float roi_z_limit_min =
         (-1.0) * (params.roi_lidar_height_m + params.roi_height_below_m);
     const float roi_z_limit_max =
@@ -174,6 +243,10 @@ static void applyROIFilter(const ROIParams& params,
                                   roi_z_limit_min, roi_z_limit_max, cloud);
     } else if (params.type == "Square") {
         squareROIFilter<PointI>(roi_radius_min, roi_radius_max, roi_z_limit_min,
+                                roi_z_limit_max, cloud);
+    } else if (params.type == "DoubleSquare") {
+        doublesquareROIFilter<PointI>(roi_radius_min, roi_radius_max, roi_radius_max_rear,
+                                roi_car_front, roi_car_rear, roi_car_side, roi_z_limit_min,
                                 roi_z_limit_max, cloud);
     } else {
         cylinderROIFilter<PointI>(roi_radius_min, roi_radius_max,
